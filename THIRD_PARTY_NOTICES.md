@@ -37,7 +37,7 @@ External packages installed for runtime use or embedded in distributed Host or b
 | [`@babel/code-frame`](https://github.com/babel/babel) | MIT |
 | [`@botiverse/oar`](https://github.com/botiverse/oar) | Apache-2.0 |
 | [`@browserbasehq/stagehand`](https://github.com/browserbase/stagehand) | MIT |
-| [`@deepseek-ai/libreoffice-kit`](https://github.com/deepseek-ai/dsh-libreoffice-kit) | MPL-2.0 |
+| [`@deepseek-ai/libreoffice-kit`](https://github.com/deepseek-harness/libreoffice-kit) | MPL-2.0 |
 | [`@earendil-works/pi-ai`](https://github.com/earendil-works/pi) | MIT |
 | [`@earendil-works/pi-coding-agent`](https://github.com/earendil-works/pi) | MIT |
 | [`@eslint-community/regexpp`](https://github.com/eslint-community/regexpp) | MIT |
