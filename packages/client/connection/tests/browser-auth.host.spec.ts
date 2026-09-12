@@ -140,6 +140,25 @@ describe('BrowserAuth', () => {
     })
   })
 
+  it('pins the launch token to DSH_WEB_TOKEN when the deployment sets it', async () => {
+    const previous = process.env['DSH_WEB_TOKEN']
+    process.env['DSH_WEB_TOKEN'] = 'pinned-launch-token'
+    try {
+      const auth = await createAuth(new RecordCredentials())
+      const url = new URL(auth.authenticatedUrl('http://127.0.0.1:3080'))
+      expect(url.searchParams.get('token')).toBe('pinned-launch-token')
+      const res = response()
+      expect(auth.authorizeIndex(request(`/${url.search}`, '127.0.0.1:3080'), res.value)).toBe(false)
+      expect(res.state.status).toBe(303)
+      const setCookie = res.state.headers?.['set-cookie']
+      if (setCookie === undefined) throw new Error('token exchange did not set a cookie')
+      expect(auth.isAuthenticated(request('/', '127.0.0.1:3080', { cookie: setCookie.split(';', 1)[0]! }))).toBe(true)
+    } finally {
+      if (previous === undefined) delete process.env['DSH_WEB_TOKEN']
+      else process.env['DSH_WEB_TOKEN'] = previous
+    }
+  })
+
   it('accepts the cookie for index serving and gives every unauthenticated request one response', async () => {
     const auth = await createAuth(new RecordCredentials())
     const { cookie } = exchange(auth)
