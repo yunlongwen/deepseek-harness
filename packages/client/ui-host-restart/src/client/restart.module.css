@@ -1,0 +1,50 @@
+/* Restart footer-action row: mirrors the Settings trigger's button chrome
+ * (42px wide row, 36px rail circle) with the shared semantic aliases. */
+
+.row {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: auto;
+  height: 42px;
+  margin: 0;
+  padding: 0 10px 0 8px;
+  box-sizing: border-box;
+  border: none;
+  border-radius: 12px;
+  background: transparent;
+  cursor: pointer;
+  overflow: hidden;
+  color: var(--dsw-alias-label-primary);
+  font-family: inherit;
+  font-size: 14px;
+  line-height: 22px;
+}
+
+.row:hover {
+  background: var(--dsw-alias-interactive-bg-hover);
+}
+
+.row:disabled {
+  cursor: default;
+}
+
+/* Rail row: the same 36x36 circle box as the other rail controls. */
+.row.rail {
+  flex: none;
+  width: 36px;
+  height: 36px;
+  margin: 0;
+  justify-content: center;
+  gap: 0;
+  padding: 0;
+  border-radius: 50%;
+  corner-shape: round;
+}
+
+.label {
+  overflow: hidden;
+  white-space: nowrap;
+}
