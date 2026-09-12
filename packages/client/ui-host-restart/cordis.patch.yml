@@ -1,0 +1,8 @@
+# Host restart bundle patch: one authenticated systemctl restart route plus
+# the sidebar footer action row. Deployment-local (not an upstream package):
+# kept untracked in the checkout so upstream syncs never touch it.
+- insert:
+    - id: host-restart
+      name: '@deepseek-ai/dsh-client-ui-host-restart'
+      config:
+        unit: dsh-web
