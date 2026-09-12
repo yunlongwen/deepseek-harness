@@ -28,6 +28,15 @@ describe('settings domain base plugin', () => {
     await vi.waitFor(() => { expect(describeCall).toHaveBeenCalledTimes(1) })
   })
 
+  it('keeps the mirror process-local when the configuration plane is unreachable', async () => {
+    const { describeCall, remote, fiber } = bench()
+    remote.$host = { home: undefined, isLoopback: false, configAccessible: false }
+    await fiber.await()
+    await Promise.resolve()
+    // memory mode: the mirror never reads the Host document.
+    expect(describeCall).not.toHaveBeenCalled()
+  })
+
   it('refreshes the mirror on document commits and connection resets, once each', async () => {
     const { ctx, describeCall, remote, fiber } = bench()
     await fiber.await()

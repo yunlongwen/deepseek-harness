@@ -38,6 +38,8 @@ The cookie signing secret is the owner-scoped `client-connection/browser-session
 
 Before authentication, every request still passes `src/api-request-trust.ts`. Its `Host` must be loopback or match a `trustedHosts` entry: exact on `host:port`, any port on port-less entries, both sides WHATWG-normalized. An attached `Origin` must equal that Host and `sec-fetch-site: cross-site` is refused. Malformed configured authorities fail plugin load. These checks defend DNS rebinding and cross-site browser requests; they never establish identity. A failed Host/Origin check returns 403, while a trusted but unauthenticated request returns 401. `dsh web --host 0.0.0.0` remains unsupported. Decision records: [browser request trust](../../../.agents/notes/implemented/architecture/2026-07-28-api-browser-trust-boundary.md) and [browser token authentication](../../../.agents/notes/implemented/architecture/2026-08-24-browser-token-authentication.md).
 
+The node half also injects the configured `trustedHosts` as the `__DSH_TRUSTED_HOSTS__` page global (a `webserver/index-inject` row), so the browser can mirror the Host fence without a round trip. The client half exposes `ctx.connection.configAccessible` (and `ctx.remote.$host.configAccessible`) when the page authority is loopback, owns the Host, or matches a declared trusted authority. Settings surfaces read this instead of `isLoopback` to decide whether the host-backed configuration plane is reachable, keeping a trusted non-loopback deployment (`dsh web --trusted-host <host>`) on the real document rather than a process-local memory mirror. Host-native desktop operations (`isLoopback` consumers such as opening files or directories) remain loopback-only.
+
 <a id="connection-generation"></a>
 ## Connection generation
 

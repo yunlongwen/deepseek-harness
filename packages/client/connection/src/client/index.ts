@@ -10,7 +10,7 @@ import {
 } from './connection.ts'
 import { createFixtureConnectionRpc } from './fixture.ts'
 import { createWebConnectionRpc, type RpcFetch, type RpcStreamOpen } from './rpc.ts'
-import { isLoopbackHostname } from '../loopback-hostname.ts'
+import { isLoopbackHostname, isTrustedAuthority, TRUSTED_HOSTS_GLOBAL } from '../loopback-hostname.ts'
 import type { ClientConnectionRpc } from '../rpc.ts'
 import { resolveConnectionConfig } from '../recovery-config.ts'
 
@@ -122,6 +122,15 @@ export interface ConnectionHandle {
    * ({@link ClientTransportHooks.ownsHost}), or the context is not a browser.
    */
   readonly isLoopback: boolean
+  /**
+   * Whether the configuration plane is reachable from this page: the page
+   * authority is loopback or owns the Host, or the served deployment declared
+   * this authority in `trustedHosts` (the `__DSH_TRUSTED_HOSTS__` page global
+   * injected by the node half). The `/api` Host fence enforces the same trust
+   * server-side; this mirrors it so browser settings surfaces skip their
+   * process-local memory fallback on trusted non-loopback deployments.
+   */
+  readonly configAccessible: boolean
   /** Current Remote event generation and the Host facts carried by its opening frame. */
   readonly generation: ConnectionGenerationState
   /** Current recovery lifecycle for connection-specific consumers. */
@@ -192,6 +201,17 @@ export function apply(ctx: Context): void {
   const transport = (globalThis as ClientTransportGlobal).__DSH_TRANSPORT__
   const recovery = resolveConnectionConfig((globalThis as ClientTransportGlobal).__DSH_CONNECTION_RECOVERY__)
   const rpc = fixtureRpc ?? transport?.rpc ?? createWebConnectionRpc(transport?.fetch, transport?.openStream)
+  const isLoopback = transport?.ownsHost === true || pageLocation === undefined
+    || isLoopbackHostname(pageLocation.hostname)
+  // The node half injects the deployment's trusted authorities verbatim.
+  // Absent (non-web context or a hand-built tree) leaves the page authority
+  // untrusted, matching the Host fence's empty-grant default.
+  const trustedHosts = (globalThis as Record<string, unknown>)[TRUSTED_HOSTS_GLOBAL]
+  const configAccessible = isLoopback || (
+    Array.isArray(trustedHosts) && trustedHosts.every((entry): entry is string => typeof entry === 'string')
+    && pageLocation !== undefined
+    && isTrustedAuthority(pageLocation.hostname, pageLocation.port, trustedHosts)
+  )
   let generationSource: ConnectionGenerationSource | undefined
   let owner: ConnectionOwner | undefined
   let generationId = 0
@@ -230,7 +250,8 @@ export function apply(ctx: Context): void {
     publishState(undefined)
   }
   const handle: ConnectionHandle = {
-    isLoopback: transport?.ownsHost === true || pageLocation === undefined || isLoopbackHostname(pageLocation.hostname),
+    isLoopback,
+    configAccessible,
     generation: {
       getSnapshot: () => generation,
       subscribe: (listener) => {

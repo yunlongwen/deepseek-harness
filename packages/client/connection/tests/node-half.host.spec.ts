@@ -10,6 +10,7 @@ import type { AttachmentStore } from '@deepseek-ai/dsh-attachment'
 import type { IndexInjection, WebServer, WebRoute, WebUpgradeRoute } from '@deepseek-ai/dsh-host-webserver'
 import { API_PATH, RpcId, apply, inject, type ClientRequest, type ConnectionConfig, type HostConnectionHandle } from '../src/index.ts'
 import { DEFAULT_MAX_REQUEST_BODY_BYTES } from '../src/http-bridge.ts'
+import { TRUSTED_HOSTS_GLOBAL } from '../src/loopback-hostname.ts'
 import { provideBrowserCredentials } from './browser-credentials.ts'
 
 /** Structural webServer fake recording both route registries. */
@@ -132,12 +133,15 @@ describe('connection node half', () => {
     try {
       const rows: IndexInjection[] = []
       ctx.emit('webserver/index-inject', rows)
-      expect(rows).toEqual([{
-        kind: 'global', name: '__DSH_CONNECTION_RECOVERY__', value: {
-          backoffBaseMs: 500, backoffFactor: 2, backoffMaxMs: 10_000,
-          generationReadyWarnMs: 3_000, generationReadyTimeoutMs: 25_000,
+      expect(rows).toEqual([
+        {
+          kind: 'global', name: '__DSH_CONNECTION_RECOVERY__', value: {
+            backoffBaseMs: 500, backoffFactor: 2, backoffMaxMs: 10_000,
+            generationReadyWarnMs: 3_000, generationReadyTimeoutMs: 25_000,
+          },
         },
-      }])
+        { kind: 'global', name: '__DSH_TRUSTED_HOSTS__', value: [] },
+      ])
       await dispose()
       const after: IndexInjection[] = []
       ctx.emit('webserver/index-inject', after)
@@ -261,6 +265,22 @@ describe('connection node half', () => {
       cookie: browserCookie(connection, 'harness.example:3080'),
     }), declared.response)
     expect(declared.state.status).toBe(404)
+    await dispose()
+  })
+
+  it('publishes the configured trusted authorities as a page global', async () => {
+    const { ctx, dispose } = await mounted({ trustedHosts: ['harness.example:3080', '192.168.1.5'] })
+    const table: IndexInjection[] = []
+    ctx.emit('webserver/index-inject', table)
+    expect(table).toContainEqual({ kind: 'global', name: TRUSTED_HOSTS_GLOBAL, value: ['harness.example:3080', '192.168.1.5'] })
+    await dispose()
+  })
+
+  it('publishes an empty trust global when no trusted authorities are configured', async () => {
+    const { ctx, dispose } = await mounted()
+    const table: IndexInjection[] = []
+    ctx.emit('webserver/index-inject', table)
+    expect(table).toContainEqual({ kind: 'global', name: TRUSTED_HOSTS_GLOBAL, value: [] })
     await dispose()
   })
 

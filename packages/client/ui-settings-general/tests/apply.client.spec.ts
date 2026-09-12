@@ -46,6 +46,7 @@ function localeView(preference: string, revision = 0): SettingsNamespaceView {
     secrets: [],
     revision,
   }
+
 }
 
 async function client(mock: RemoteMock, start: () => Promise<TestClient>, hasDocument = false) {

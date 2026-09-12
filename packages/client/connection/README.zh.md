@@ -38,6 +38,8 @@ cookie 签名密钥是 `ctx.credentials` 中由 `client-connection/browser-sessi
 
 认证之前，每个请求仍经过 `src/api-request-trust.ts`。其 `Host` 必须是 loopback，或与 `trustedHosts` 条目匹配：带端口的 `host:port` 精确匹配，不带端口的条目匹配任意端口，两侧均经 WHATWG 归一化。若附带 `Origin`，它必须等于该 Host；`sec-fetch-site: cross-site` 一律拒绝。畸形配置 authority 会让插件加载失败。这些检查防御 DNS rebinding 与跨站浏览器请求，绝不建立身份。Host/Origin 校验失败返回 403；Host 可信但未认证的请求返回 401。`dsh web --host 0.0.0.0` 仍不受支持。决策记录：[浏览器请求信任](../../../.agents/notes/implemented/architecture/2026-07-28-api-browser-trust-boundary.zh.md)与[浏览器令牌认证](../../../.agents/notes/implemented/architecture/2026-08-24-browser-token-authentication.zh.md)。
 
+节点半还把配置的 `trustedHosts` 作为 `__DSH_TRUSTED_HOSTS__` 页面全局注入（一条 `webserver/index-inject` 行），让浏览器无需往返即可镜像 Host fence。客户端半侧在页面 authority 是 loopback、持有 Host，或与声明受信任的 authority 匹配时，暴露 `ctx.connection.configAccessible`（以及 `ctx.remote.$host.configAccessible`）。设置面读取该值而非 `isLoopback`，来决定 host 支撑的配置面是否可达，让可信的非 loopback 部署（`dsh web --trusted-host <host>`）继续使用真实文档，而不是退回进程内 memory mirror。Host 原生桌面操作（消费 `isLoopback` 的打开文件或目录等）仍保持 loopback-only。
+
 <a id="connection-generation"></a>
 ## Connection generation
 

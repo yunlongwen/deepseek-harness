@@ -147,6 +147,8 @@ describe('real Loader composition', () => {
       expect(got.type).toBe('text/html; charset=utf-8')
       expect(got.body).toContain('__T__')
       expect(got.body).toContain('shell')
+      // The composed client-connection half injects its empty trust global.
+      expect(got.body).toContain('__DSH_TRUSTED_HOSTS__')
     }
     expect(await request(port, '/', authenticated({ method: 'HEAD' }))).toEqual({
       status: 200,

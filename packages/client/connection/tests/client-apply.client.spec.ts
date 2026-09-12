@@ -15,13 +15,15 @@ import {
 } from '../src/client/index.ts'
 
 type Win = {
-  location?: { hostname: string; search: string; origin?: string }
+  location?: { hostname: string; port?: string; search: string; origin?: string }
   __DSH_TRANSPORT__?: ClientTransportHooks
+  __DSH_TRUSTED_HOSTS__?: unknown
 }
 
 afterEach(() => {
   delete (globalThis as Win).location
   delete (globalThis as Win).__DSH_TRANSPORT__
+  delete (globalThis as Win).__DSH_TRUSTED_HOSTS__
   vi.unstubAllGlobals()
   vi.useRealTimers()
 })
@@ -139,6 +141,33 @@ describe('connection client apply', () => {
   it('reports non-loopback page authority through the connection handle', async () => {
     ;(globalThis as Win).location = { hostname: '192.0.2.20', search: '' }
     expect((await mount()).isLoopback).toBe(false)
+  })
+
+  it('reports configAccessible on a page whose authority the deployment trusts', async () => {
+    ;(globalThis as Win).location = { hostname: 'harness.example', port: '3080', search: '' }
+    ;(globalThis as Win).__DSH_TRUSTED_HOSTS__ = ['harness.example:3080']
+    const handle = await mount()
+    expect(handle.isLoopback).toBe(false)
+    expect(handle.configAccessible).toBe(true)
+  })
+
+  it('withholds configAccessible from a non-loopback page the deployment does not trust', async () => {
+    ;(globalThis as Win).location = { hostname: 'harness.example', port: '3080', search: '' }
+    ;(globalThis as Win).__DSH_TRUSTED_HOSTS__ = ['other.example']
+    const handle = await mount()
+    expect(handle.configAccessible).toBe(false)
+  })
+
+  it('withholds configAccessible when the injected trust global is absent or malformed', async () => {
+    ;(globalThis as Win).location = { hostname: 'harness.example', port: '3080', search: '' }
+    expect((await mount()).configAccessible).toBe(false)
+    ;(globalThis as Win).__DSH_TRUSTED_HOSTS__ = 'harness.example'
+    expect((await mount()).configAccessible).toBe(false)
+  })
+
+  it('keeps configAccessible true on a loopback page without any trust global', async () => {
+    ;(globalThis as Win).location = { hostname: 'localhost', search: '' }
+    expect((await mount()).configAccessible).toBe(true)
   })
 
   it('requires one generation source and ignores a stale source disposer', async () => {

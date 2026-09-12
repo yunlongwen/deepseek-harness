@@ -26,7 +26,7 @@ function deferred<T>() {
   return { promise, resolve }
 }
 
-async function bench(isLoopback = true) {
+async function bench(configAccessible = true) {
   const ctx = new Context()
   await ctx.plugin(SlotRegistry).await()
   const locale = new LocaleRuntime(ctx)
@@ -51,7 +51,7 @@ async function bench(isLoopback = true) {
     return Promise.resolve({ ok: true as const, value: namespace() })
   })
   const events = new TestRemote(ctx, { settings: { describe, mutate } })
-  events.$host = { home: undefined, isLoopback }
+  events.$host = { home: undefined, isLoopback: configAccessible, configAccessible }
   await ctx.plugin({ inject: [...settingsInject], apply: settingsApply }).await()
   return {
     ctx, slots: ctx.get('slots') as SlotRegistry, locale, describe, mutate, events,
