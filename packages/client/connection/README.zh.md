@@ -46,6 +46,8 @@ cookie 签名密钥是 `ctx.credentials` 中由 `client-connection/browser-sessi
 
 通过认证的共享 HTTP 请求在传输请求体之前经过 `connection/request` waterfall。监听器可以拒绝新请求，或等待 `next()` 直到响应完成；释放所属 fiber 会移除准入行为。Desktop 使用此扩展点，在已批准的安装期间锁住新的 API 工作，而不取消已接纳的工作。客户端断开会中止处理函数的信号；桥接器停止写入 socket，并排空剩余响应块。WebSocket 流仍由 API Gateway 负责。
 
+节点半还把配置的 `trustedHosts` 作为 `__DSH_TRUSTED_HOSTS__` 页面全局注入（一条 `webserver/index-inject` 行），让浏览器无需往返即可镜像 Host fence。客户端半侧在页面 authority 是 loopback、持有 Host，或与声明受信任的 authority 匹配时，暴露 `ctx.connection.configAccessible`（以及 `ctx.remote.$host.configAccessible`）。设置面读取该值而非 `isLoopback`，来决定 host 支撑的配置面是否可达，让可信的非 loopback 部署（`dsh web --trusted-host <host>`）继续使用真实文档，而不是退回进程内 memory mirror。Host 原生桌面操作（消费 `isLoopback` 的打开文件或目录等）仍保持 loopback-only。
+
 <a id="connection-generation"></a>
 ## Connection generation
 

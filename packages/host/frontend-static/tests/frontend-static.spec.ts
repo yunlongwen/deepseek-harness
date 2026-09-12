@@ -159,6 +159,8 @@ describe('real Loader composition', () => {
       const base = got.body.indexOf('<base href="./">')
       expect(base).toBeLessThan(got.body.indexOf('<link rel="preload" as="script" href="plugins/boot.js">'))
       expect(base).toBeLessThan(got.body.indexOf('<script>window.__T__=1</script>'))
+      // The composed client-connection half injects its empty trust global.
+      expect(got.body).toContain('__DSH_TRUSTED_HOSTS__')
     }
     offRows()
     expect(await request(port, '/', authenticated({ method: 'HEAD' }))).toEqual({

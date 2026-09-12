@@ -46,6 +46,8 @@ Every admitted request speaks for one Peer, the operator. `ctx.connection.operat
 
 Authenticated shared HTTP requests pass through the `connection/request` waterfall before body transfer. A listener may refuse new requests or await `next()` through response completion; removing its owning fiber removes admission behavior. Desktop uses this hook to lock new API work during an approved installation without canceling already-admitted work. Client disconnection aborts the handler signal; the bridge stops socket writes and drains any remaining response chunks. WebSocket stream ownership remains with API Gateway.
 
+The node half also injects the configured `trustedHosts` as the `__DSH_TRUSTED_HOSTS__` page global (a `webserver/index-inject` row), so the browser can mirror the Host fence without a round trip. The client half exposes `ctx.connection.configAccessible` (and `ctx.remote.$host.configAccessible`) when the page authority is loopback, owns the Host, or matches a declared trusted authority. Settings surfaces read this instead of `isLoopback` to decide whether the host-backed configuration plane is reachable, keeping a trusted non-loopback deployment (`dsh web --trusted-host <host>`) on the real document rather than a process-local memory mirror. Host-native desktop operations (`isLoopback` consumers such as opening files or directories) remain loopback-only.
+
 <a id="connection-generation"></a>
 ## Connection generation
 
