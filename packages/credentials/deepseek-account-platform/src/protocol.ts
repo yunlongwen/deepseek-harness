@@ -241,18 +241,25 @@ async function platformRequest(url: string, init: RequestInit, signal: AbortSign
 }
 
 /**
- * Accept a browser-accessible loopback HTTP origin for local or SSH-forwarded login.
- * @param value - loopback HTTP origin with an explicit port supplied by the authenticated initiating client.
- * @returns normalized origin; remote domains and path-based proxies are unsupported.
+ * Accept a browser-accessible origin for the OAuth completion redirect:
+ * loopback HTTP for local or SSH-forwarded login, or HTTPS for reverse-proxied
+ * deployments. Remote plain HTTP is never accepted. The completion redirect
+ * only carries the one-time authorization code, whose exchange stays
+ * server-side with the Host's platform credentials.
+ * @param value - origin supplied by the authenticated initiating client.
+ * @returns normalized origin; path-based proxies and userinfo are unsupported.
  */
 export function loginOrigin(value: string): string {
   let url: URL
   try { url = new URL(value) } catch { throw new PlatformAuthError('protocol') }
   const explicitPort = /^http:\/\/(?:localhost|127\.0\.0\.1|\[::1\]):([0-9]+)\/?$/i.exec(value)?.[1]
-  if (explicitPort === undefined || Number(explicitPort) === 0
-    || url.protocol !== 'http:' || !['localhost', '127.0.0.1', '[::1]'].includes(url.hostname)
+  if (explicitPort !== undefined) {
+    if (Number(explicitPort) === 0) throw new PlatformAuthError('protocol')
+    return `${url.protocol}//${url.hostname}:${Number(explicitPort)}`
+  }
+  if (url.protocol !== 'https:' || !url.hostname
     || url.username || url.password || url.pathname !== '/' || url.search || url.hash) {
     throw new PlatformAuthError('protocol')
   }
-  return `${url.protocol}//${url.hostname}:${Number(explicitPort)}`
+  return url.origin
 }
